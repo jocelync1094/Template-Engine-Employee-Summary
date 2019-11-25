@@ -92,11 +92,9 @@ inquirer
     //first the manager card
     const manager = new Manager (user.name , user.id , user.email , user.officeNumber);
     
-    const managerCard = renderHTML(manager);
+    let team = renderHTML(manager);
 
-    console.log(managerCard);
 
-    let temporaryMainFile = templateMainFile.replace('{{ team }}', managerCard);
 
     //adding team members
     switch(user.member[0]){
@@ -105,10 +103,22 @@ inquirer
       .then(function(data){
         let engineer1 = new Engineer(data.name , data.id, data.email,data.github);
         let engineer1card = renderHTML(engineer1);
-        console.log(engineer1card);
+        team = team + engineer1card
+        console.log(team);
+        let temporaryMainFile = templateMainFile.replace('{{ team }}', team);
+        fs.writeFileSync("index.html",temporaryMainFile);
+      }).catch(err=>console.log(err));
+      case "intern":
+      inquirer.prompt(internQuestions)
+      .then(function(data){
+        let intern1 = new Intern(data.name , data.id, data.email,data.school);
+        let intern1Card = renderHTML(intern1);
+        team = team + intern1Card
+        console.log(team);
+        let temporaryMainFile = templateMainFile.replace('{{ team }}', team);
+        fs.writeFileSync("index.html",temporaryMainFile);
       }).catch(err=>console.log(err));
     }
-    fs.writeFileSync("index.html",temporaryMainFile);
   })
   .catch(err=>console.log(err));
 
@@ -123,6 +133,7 @@ function renderHTML (position){
 
 
     if(position.getRole().toLowerCase()==="engineer"){
+        temporaryFile = temporaryFile.replace('{{ github }}', position.github);
         temporaryFile = temporaryFile.replace('{{ github }}', position.github);
       }else if(position.getRole().toLowerCase()==="intern"){
         temporaryFile = temporaryFile.replace('{{ school }}', position.school);
