@@ -33,7 +33,7 @@ const initialQuestions = [
     type: "checkbox",
     message: "What type of team member would you like to add?",
     name: "member", 
-    choices: ["engineer","intern","done"]
+    choices: ["engineer","intern"]
   }
 ];
 
@@ -83,6 +83,24 @@ const internQuestions = [
   }
 ];
 
+const continueOrEnd = [
+  {
+    type: "checkbox",
+    message: "Add more members?",
+    name: "choice",
+    choices: ["true","false"]
+  }
+]
+
+const typeOfMember = [
+  {
+    type: "checkbox",
+    message: "What type of team member would you like to add?",
+    name: "member1", 
+    choices: ["engineer","intern"]  
+  }
+]
+
 inquirer
   .prompt(initialQuestions)
   .then(function(user) {
@@ -93,32 +111,13 @@ inquirer
     const manager = new Manager (user.name , user.id , user.email , user.officeNumber);
     
     let team = renderHTML(manager);
-
+    let proceed = true;
 
 
     //adding team members
-    switch(user.member[0]){
-      case "engineer":
-      inquirer.prompt(engineerQuestions)
-      .then(function(data){
-        let engineer1 = new Engineer(data.name , data.id, data.email,data.github);
-        let engineer1card = renderHTML(engineer1);
-        team = team + engineer1card
-        console.log(team);
-        let temporaryMainFile = templateMainFile.replace('{{ team }}', team);
-        fs.writeFileSync("index.html",temporaryMainFile);
-      }).catch(err=>console.log(err));
-      case "intern":
-      inquirer.prompt(internQuestions)
-      .then(function(data){
-        let intern1 = new Intern(data.name , data.id, data.email,data.school);
-        let intern1Card = renderHTML(intern1);
-        team = team + intern1Card
-        console.log(team);
-        let temporaryMainFile = templateMainFile.replace('{{ team }}', team);
-        fs.writeFileSync("index.html",temporaryMainFile);
-      }).catch(err=>console.log(err));
-    }
+    AddorStop(proceed,user.member[0],team,templateMainFile);
+    
+    
   })
   .catch(err=>console.log(err));
 
@@ -144,5 +143,53 @@ function renderHTML (position){
     return temporaryFile;
 }
 
+async function AddorStop (proceed,chosenMember,team, templateMainFile) {
+  try {
+    do{
+      switch(chosenMember){
+        case "engineer":
+        const engineer = await inquirer.prompt(engineerQuestions);
+        console.log(engineer);
+        
+        let engineer1 = new Engineer(engineer.name , engineer.id, engineer.email,engineer.github);
+        let engineer1card = renderHTML(engineer1);
+        team = team + engineer1card
+        console.log(team);
+        let nextMove = await inquirer.prompt(continueOrEnd);
+        console.log(nextMove);
+        
+        if(nextMove.choice[0]==="false"){
+            proceed = false;
+            console.log(proceed,"THIS IS PROCEED STATUS");
+            let temporaryMainFile = templateMainFile.replace('{{ team }}', team);
+            fs.writeFileSync("index.html",temporaryMainFile);
+        } else if (nextMove.choice[0]==="true"){
+          const newMember = await inquirer.prompt(typeOfMember);
+          chosenMember = newMember.member1[0];
+        }
+        break;  
+        case "intern":
+        const intern = await inquirer.prompt(internQuestions);
+          let intern1 = new Intern(intern.name , intern.id, intern.email,intern.school);
+          let intern1Card = renderHTML(intern1);
+          team = team + intern1Card
+          console.log(team);
+        let nextMove1 = await inquirer.prompt(continueOrEnd);
+         
+            if(nextMove1.choice[0]==="false"){
+              proceed = false;
+              let temporaryMainFile = templateMainFile.replace('{{ team }}', team);
+              fs.writeFileSync("index.html",temporaryMainFile);
+            } else if (nextMove1.choice[0]==="true"){
+              const newMember1 = await inquirer.prompt(typeOfMember);
+              chosenMember = newMember1.member1[0];
+            }
+        break;
+      }
+    }while(proceed)
 
   
+  } catch (err) {
+    console.log(err);
+  }
+}
